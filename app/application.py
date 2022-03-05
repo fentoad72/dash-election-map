@@ -209,11 +209,9 @@ application.layout = html.Div(
 
 @application.callback(Output("output", "children"), [Input("input", "value")])
 def output_text(value):
-    print(value)
-    print(type(value))
+    
     lat, lon = extract_lat_long_via_address(value)
-    print(lat)
-    print(lon)
+    
     return lat, lon
 
 @application.callback(

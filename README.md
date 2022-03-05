@@ -9,13 +9,12 @@ Manually installed:
 5.  requests
 
 ```
-python3 -m venv ~/.dash
-source ~/.dash/bin/activate
+python3 -m venv ~/.dash1
+source ~/.dash1/bin/activate
 pip install dash
 pip install dash_bootstrap_components
 pip install requests
 pip freeze > requirements.txt
-make all
 ```
 This has been moved to app runner using github. 
 
