@@ -1,5 +1,7 @@
-import googlemaps
+import requests
+
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
 gmaps = googlemaps.Client(key=GOOGLE_API_KEY)
 
 # Look up an address with reverse geocoding

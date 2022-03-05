@@ -4,10 +4,8 @@
 have to use geopandas so trying conda.
 Manually installed:
 
-1.  geopandas
 2.  dash
 3.  dash_bootstrap_components
-4.  googlemaps - don't need this
 5.  requests
 
 ```
