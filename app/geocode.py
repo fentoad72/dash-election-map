@@ -3,10 +3,10 @@ import os
 
 
 #GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
+#GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
  
 
-def extract_lat_long_via_address(address_or_zipcode):
+def extract_lat_long_via_address(address_or_zipcode, GOOGLE_API_KEY):
     lat, lng = None, None
     api_key = GOOGLE_API_KEY
     base_url = "https://maps.googleapis.com/maps/api/geocode/json"

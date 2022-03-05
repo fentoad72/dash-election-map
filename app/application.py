@@ -1,5 +1,6 @@
 # https://stackoverflow.com/questions/62732631/how-to-collapsed-sidebar-in-dash-plotly-dash-bootstrap-components
 import os
+import sys
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc
@@ -9,18 +10,15 @@ from dash.dependencies import Input, Output, State
 from dash_bootstrap_components._components.Container import Container
 from geocode import extract_lat_long_via_address
 
+#GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY'] = os.environ['GOOGLE_API_KEY']
+try:  
+  os.environ['GOOGLE_API_KEY']
+except KeyError: 
+  print('[error]: `GOOGLE_#API_KEY` environment variable required')
+  sys.exit(1)
 
-#s3_client = boto3.client('s3')
-BUCKET = "map-2022-01-08"
-FILE_NAME = "map.html"
-"""
-response = s3_client.list_objects_v2(Bucket=BUCKET)
-files = response.get("Contents")
-for file in files:
-        print(type(file))
-        print(file)
-        s3_client.download_file(BUCKET, file['Key'], "./static/"+ str(file['Key']))
-"""
+GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']  
+
 maps = os.listdir("./app/static")
 maps = [ map for map in maps if map.endswith( '.html') ]
 maps = [os.path.splitext(map)[0] for map in maps]
@@ -210,7 +208,7 @@ application.layout = html.Div(
 @application.callback(Output("output", "children"), [Input("input", "value")])
 def output_text(value):
     
-    lat, lon = extract_lat_long_via_address(value)
+    lat, lon = extract_lat_long_via_address(value, GOOGLE_API_KEY)
     
     return lat, lon
 
