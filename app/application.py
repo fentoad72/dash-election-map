@@ -8,7 +8,7 @@ from dash import html
 #import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from dash_bootstrap_components._components.Container import Container
-from geocode import extract_lat_long_via_address
+from geocode import extract_lat_long_via_address, get_district
 
 #GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY'] = os.environ['GOOGLE_API_KEY']
 try:  
@@ -69,7 +69,7 @@ navbar = dbc.Navbar(
                 dbc.Row(
                     [
                         dbc.Col(html.Img(src=PLOTLY_LOGO, height="60px")),
-                        #dbc.Col(dbc.NavbarBrand("Navbar", className="ms-2")),
+                        dbc.Col(dbc.NavbarBrand("Colorado Congressional Districts", className="ms-2")),
                     ],
                     align="center",
                     className="g-0",
@@ -159,16 +159,18 @@ CONTENT_STYLE1 = {
 
 sidebar = html.Div(
     [
-         html.H1(
-            "Map of Colorado's Congressional Districts", className="lead"
+         
+        html.Br(),
+        html.H3(
+            "Find your Colorado Congressional District", className="lead"
         ),
         html.Br(),
         html.H3(
-            "Enter your address; blank for current position", className="lead"
+            "Enter your address below", className="lead"
         ),
         html.Div(
            [
-              dbc.Input(id="input", placeholder="17301 W Colfax Ave", size="md", className="mb-3", type="text"),
+              dbc.Input(id="input", placeholder="ex: 17301 W Colfax Ave Lakewood", size="md", className="mb-3", type="text"),
               html.Br(),
               html.P(id="output"),
            ]
@@ -208,9 +210,10 @@ application.layout = html.Div(
 @application.callback(Output("output", "children"), [Input("input", "value")])
 def output_text(value):
     
-    lat, lon = extract_lat_long_via_address(value, GOOGLE_API_KEY)
+    #lat, lon = extract_lat_long_via_address(value, GOOGLE_API_KEY)
+    districts = extract_lat_long_via_address(value, GOOGLE_API_KEY)
     
-    return lat, lon
+    return districts
 
 @application.callback(
     [

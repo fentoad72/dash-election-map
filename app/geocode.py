@@ -27,21 +27,92 @@ def extract_lat_long_via_address(address_or_zipcode, GOOGLE_API_KEY):
         lng = results['geometry']['location']['lng']
     except:
         pass
-    return lat, lng
 
-##lat, lng = extract_lat_long_via_address("17301 W Colfax Ave Suite 110, Golden, CO 80401")
+    #districts = get_district(lat, lng)
+    #county = get_county(lat, lon)
+    #return get_district(lat, lng)
+    return get_district(lat,lng)
 
 
-#print(lat)
-#print(lng)
+def get_district(lat,lon):
+    print("lat/lon")
+    print(lat)
+    print(lon)
+    if lat is None or lon is None:
+        return None
+    base_url = "https://zfa9qwmegs.us-west-2.awsapprunner.com/district"
+    endpoint = f"{base_url}?lat={lat}&lon={lon}"
+    r = requests.get(endpoint)
+    print(r.status_code)
+    
+    if r.status_code not in range(200, 299):
+        
+        return None, None
+    try:
+        '''
+        This try block incase any of our inputs are invalid. This is done instead
+        of actually writing out handlers for all kinds of responses.
+        '''    
+        results = r.json()
+        print(results)
+    except:
+        pass
 
-#what county are they in 
-#what district are they in 
-# 
+    district_list = results['district']
+    # if no districts returned - either bad lat/lon or point not in polygons
+    #if not district_list:
+    #    msg = results['msg']
+
+    if len(results['district']) > 0:
+
+        return "Your address is in Colorado Congressional " + results['district'][0] +  get_county(lat,lon)
+    else:
+        return "District not found, please verify your address\n"    
+
+def get_county(lat,lon):
+    print("lat/lon")
+    print(lat)
+    print(lon)
+    if lat is None or lon is None:
+        return None
+    base_url = "https://zfa9qwmegs.us-west-2.awsapprunner.com/county"
+    endpoint = f"{base_url}?lat={lat}&lon={lon}"
+    r = requests.get(endpoint)
+    print(r.status_code)
+    
+    if r.status_code not in range(200, 299):
+        
+        return None, None
+    try:
+        '''
+        This try block incase any of our inputs are invalid. This is done instead
+        of actually writing out handlers for all kinds of responses.
+        '''    
+        results = r.json()
+        print(results)
+    except:
+        pass
+
+    
+    # if no districts returned - either bad lat/lon or point not in polygons
+    #if not district_list:
+    #    msg = results['msg']
+
+    if len(results['county']) > 0:
+
+        return ".  You can register to vote in  " + results['county'][0] 
+    else:
+        return "County not found.  Please verify the address above"    
+
+       
+
+
 if __name__ == "__main__":
-    lat, lng = extract_lat_long_via_address("17301 W Colfax Ave Suite 110, Golden, CO 80401")
+    #lat, lng = extract_lat_long_via_address("17301 W Colfax Ave Suite 110, Golden, CO 80401")
 
     #lat, lng = extract_lat_long_via_address("281 Silver Queen, Durango, CO, 81301")
-    print(lat)
-    print(lng)
+    lat = 37.209 
+    lon=-107.788
+    district = get_county(lat,lon)
+    print(district)
 
