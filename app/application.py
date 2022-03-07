@@ -5,6 +5,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc
 from dash import html
+import time
 #import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from dash_bootstrap_components._components.Container import Container
@@ -172,7 +173,14 @@ sidebar = html.Div(
            [
               dbc.Input(id="input", placeholder="ex: 17301 W Colfax Ave Lakewood", size="md", className="mb-3", type="text"),
               html.Br(),
+              dcc.Loading(
+                    id="loading-2",
+                    children=[html.Div([html.Div(id="loading-output-2")])],
+                    type="circle",
+              ),
+              html.Br(),
               html.P(id="output"),
+        
            ]
         ),
         dbc.Nav(
@@ -206,6 +214,10 @@ application.layout = html.Div(
 )
 
 #  callback for input
+@application.callback(Output("loading-output-2", "children"), Input("input", "value"))
+def input_triggers_nested(value):
+    time.sleep(1)
+    return value
 
 @application.callback(Output("output", "children"), [Input("input", "value")])
 def output_text(value):
