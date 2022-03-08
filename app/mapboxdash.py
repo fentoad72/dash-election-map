@@ -1,6 +1,6 @@
 import pandas as pd
 us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
-
+print(us_cities.head())
 import plotly.express as px
 
 fig = px.scatter_mapbox(us_cities, lat="lat", lon="lon", hover_name="City", hover_data=["State", "Population"],

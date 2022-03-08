@@ -64,8 +64,11 @@ def get_district(lat,lon):
     #    msg = results['msg']
 
     if len(results['district']) > 0:
+        print("districts found")
+        print(results['district'])
+        return_msg = "Your attitude and Longitude are: (" + str(lat) + ", " + str(lon) + "). "
 
-        return "Your address is in Colorado Congressional " + results['district'][0] +  get_county(lat,lon)
+        return return_msg + "Your address is in Colorado Congressional " + results['district'][0] +  get_county(lat,lon)
     else:
         return "District not found, please verify your address\n"    
 
