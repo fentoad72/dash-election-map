@@ -2,7 +2,6 @@ import dash
 #import dash_html_components as html
 #import dash_html_components as dbc
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
 from dash import html
 import dash_leaflet as dl
 from dash.dependencies import Input, Output
@@ -10,6 +9,12 @@ import pandas as pd
 us_cities = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv")
 print(us_cities.head())
 import plotly.express as px
+import dash_core_components as dcc
+import plotly.graph_objects as go
+
+positions = [(40, -105)]
+markers = [dl.Marker(dl.Tooltip("test"), position=pos, id="marker{}".format(i)) for i, pos in enumerate(positions)]
+cluster = dl.MarkerClusterGroup(id="markers", children=markers, options={"polygonOptions": {"color": "red"}})
 
 def make_map(lat,lon):
     print(type(lat))
@@ -25,7 +30,7 @@ def make_map(lat,lon):
         df,  # Our DataFrame
         lat = "latitude",
         lon = "longitude",
-        center = {"lat": lat , "lon": lon},  # where map will be centered
+        center = {"lat": lat , "lon": lon}, # where map will be centered
         width = 600,  # Width of map
         height = 600,  # Height of map
         zoom = 16,
@@ -37,13 +42,36 @@ def make_map(lat,lon):
     return fig
 
 app = dash.Dash(prevent_initial_callbacks=True)
+
 lat = 39.7392
 lon = -104.9903
 fig = make_map(lat, lon)
 
+popovers = html.Div(
+    [
+        dbc.Button(
+            "Click Me",
+            id="component-target",
+            n_clicks=0,
+        ),
+        dbc.Popover(
+            [
+                dbc.PopoverHeader("Popover header"),
+                dbc.PopoverBody("And here's some amazing content. Cool!"),
+                html.Div([html.H1('Map')], style={'textAlign': 'center'}),
+                dcc.Graph(figure=fig),
+                
+            ],
+            target="component-target",
+            trigger="click",
+        ),
+        
+    ]
+)
+
 app.layout = html.Div([
-    html.Div([html.H1('Map')], style={'textAlign': 'center'}),
-    dcc.Graph(figure=fig),
+    popovers,
+    
 ])
 
 if __name__ == '__main__':
