@@ -43,3 +43,8 @@ def plot_map():
 
 
 app = dash.Dash(prevent_initial_callbacks=True)
+
+if __name__ == "__main__":
+      
+    #print(f"file_name: {file&#91;'Key']}, size: {file&#91;'Size']}")
+    app.run_server(debug=True,port=8050,host='0.0.0.0')
