@@ -39,7 +39,7 @@ def plot_map():
                     "below":"traces",
                     "type":"line",
                     "color":"purple",
-                    "line":{"width": 1.5}
+                    "line":{"width": 10.5}
                 }
             ],
         },
