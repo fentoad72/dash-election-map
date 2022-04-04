@@ -1,7 +1,7 @@
 import dash
 #import dash_html_components as html
 #import dash_html_components as dbc
-import dash_bootstrap_components as dbc
+#import dash_bootstrap_components as dbc
 from dash import dcc 
 from dash import html
 from dash import dash_table
@@ -14,6 +14,7 @@ import geopandas as gpd
 import base64
 import datetime
 import io
+import numpy as np
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -21,7 +22,9 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 ### Plot a county map of Colorado (zoomed in to Denver metro)
 def plot_map():
-    filename = './app/geojson/counties.json'
+ #   global fig # make fig global so it can be updated
+    global counties_gdf # make global so it can be used in clean_data
+    filename = './geojson/co_counties.geojson'
     file=open(filename)
     counties_gdf = gpd.read_file(file)
 
@@ -67,12 +70,21 @@ def parse_contents(contents, filename, date):
             'There was an error processing this file.'
         ])
 
+    print ('parsing contents')
+
+### update fig here
+    print ('df',type(df))
+    print (df.head(10))
+
+### clean data
+    df_clean = clean_data(df)
+
     return html.Div([
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
 
         dash_table.DataTable(
-            df.to_dict('records'),
+            df_clean.to_dict('records'),
             [{'name': i, 'id': i} for i in df.columns]
         ),
 
@@ -86,29 +98,72 @@ def parse_contents(contents, filename, date):
         })
     ])
 
-def data_to_df(contents, filename, date):
-    content_type, content_string = contents.split(',')
+def clean_data(df):
+    global figure
+### use dff because counties_df is global
+    global counties_df # make global so it can be used in clean_data
+    dff = counties_gdf.copy()
+    df_clean = df.copy()
 
-    decoded = base64.b64decode(content_string)
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            df = pd.read_excel(io.BytesIO(decoded))
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'There was an error processing this file.'
-        ])
+    print('cleaning data')
 
-    print('df',type(df))
+# fill missing with 0
+    df_clean =df_clean.fillna(value='0',axis=1)
 
-#   fig.update_traces(locations=df,selector=dict(type='choropleth'))
+    for col in df_clean.columns:
+        if (col != 'County'):
+#remove commas from numbers
+            df_clean[col] = df_clean[col].astype(str)
+            df_clean[col] = df_clean[col].str.replace(',','')
+            df_clean[col] = df_clean[col].astype(float)
+            df_clean[col] = df_clean[col].astype(np.int64)
 
-    return df
+    for i in range(len(dff)):
+        df_clean.at[i,'%Active']=100.*df_clean.at[i,'Total-Active']/df_clean.at[i,'Total']
+
+#now updating df
+    dff['Republicans']=0
+    dff['Democrats']=0
+    dff['Unaffiliated']=0
+    dff['Max']=None
+
+
+#    figure.update_traces(locations=dff,selector=dict(type='choropleth'))
+#    figure.add_trace(go.Scatter,data=dff)
+
+    partial = 0.75
+
+    for c in dff['COUNTY']:
+        county_index = dff[dff['COUNTY']==c].index[0]
+        voter_index = df_clean[df_clean['County']==c].index[0]
+        gop_total = df_clean.at[voter_index,'REP-Active']+df_clean.at[voter_index,'REP-Inactive']
+        dff.at[county_index,'Republicans'] = gop_total
+        dem_total = df_clean.at[voter_index,'DEM-Active']+df_clean.at[voter_index,'DEM-Inactive']
+        dff.at[county_index,'Democrats'] = dem_total
+        uaf_total = df_clean.at[voter_index,'UAF-Active']+df_clean.at[voter_index,'UAF-Inactive']
+        dff.at[county_index,'Unaffiliated'] = uaf_total
+
+        if ((dff.at[county_index,'Unaffiliated'] > dff.at[county_index,'Democrats']) and \
+            (dff.at[county_index,'Unaffiliated'] > dff.at[county_index,'Republicans'])):
+            if (dff.at[county_index,'Democrats']/dff.at[county_index,'Unaffiliated'] > partial):
+                dff.at[county_index,'Max']=1
+            elif (dff.at[county_index,'Republicans']/dff.at[county_index,'Unaffiliated'] > partial):
+                dff.at[county_index,'Max']=3
+            else:
+                dff.at[county_index,'Max']= 2
+        elif ((dff.at[county_index,'Republicans'] > dff.at[county_index,'Democrats']) and \
+            (dff.at[county_index,'Republicans'] > dff.at[county_index,'Unaffiliated'])):
+            dff.at[county_index,'Max']= 4  
+        elif ((dff.at[county_index,'Democrats'] > dff.at[county_index,'Unaffiliated']) and \
+            (dff.at[county_index,'Democrats'] > dff.at[county_index,'Republicans'])):
+            dff.at[county_index,'Max']= 0
+        else:
+            print('Error, no max found')
+            exit()
+
+    df = dff.copy()
+    return df_clean
+
 
 ### the Decorator that updates the output when a file is dragged onto the web page
 ### (also from https://dash.plotly.com/dash-core-components/upload)
@@ -124,24 +179,10 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             zip(list_of_contents, list_of_names, list_of_dates)]
         return children
 
-@app.callback(Output('output-data-upload', 'plot_mods'),
-              Input('upload-data', 'contents'),
-              State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
-def graph_data(list_of_contents, list_of_names, list_of_dates):
-# same as update_output but returns df instead of dict
-    if list_of_contents is not None:
-#       voter_df =  pd.DataFrame.from_dict({ data_to_df(c,n,d) for c,n,d in
-#           zip(list_of_contents, list_of_names, list_of_dates) })
-#       print(voter_df.head(10))
 
-        print('graph_data')
-
-        plot_mods = ''
-        return plot_mods
-
+figure = plot_map()
 app.layout = html.Div(children=[html.H1(children='Colorado Counties'),
-    dcc.Graph(id='map', figure=plot_map()),
+    dcc.Graph(id='map', figure=figure),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
