@@ -1,6 +1,6 @@
 ## from here:
 ## https://stackoverflow.com/questions/62097062/uploading-a-csv-to-plotly-dash-and-rendering-a-bar-plot-based-on-a-pandas-datafr
-
+##  note you will have to add your mapbox token to .mapbox_token
 import base64
 import datetime
 import io
@@ -10,6 +10,8 @@ from dash import dcc, html, dash_table
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+import plotly.express as px
+import geopandas as gpd
 
 
 app = dash.Dash()
@@ -55,9 +57,14 @@ def parse_contents(contents, filename, date):
         return html.Div([
             'There was an error processing this file.'
         ])
+    
+    px.set_mapbox_access_token(open(".mapbox_token").read()) 
+    df1 = px.data.carshare()
+    fig = px.scatter_mapbox(df1, lat="centroid_lat", lon="centroid_lon",     color="peak_hour", size="car_hours",
+                  color_continuous_scale=px.colors.cyclical.IceFire, size_max=15, zoom=10)   
 
     return html.Div([
-
+        dcc.Graph(figure=fig),
         dcc.Graph(
             figure = go.Figure(data=[
             go.Bar(name=df.columns.values[0], x=pd.unique(df['voter']), y=df['score'], text=df['score'], textposition='auto'),
