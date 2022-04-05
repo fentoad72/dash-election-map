@@ -22,9 +22,10 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 ### Plot a county map of Colorado (zoomed in to Denver metro)
 def plot_map():
- #   global fig # make fig global so it can be updated
+    global fig # make fig global so it can be updated
     global counties_gdf # make global so it can be used in clean_data
-    filename = './geojson/co_counties.geojson'
+#   filename = './geojson/co_counties_voters.geojson'
+    filename = '/Users/arbetter/Coding/Streamlit/coloradovoters/co_counties_voters.geojson'
     file=open(filename)
     counties_gdf = gpd.read_file(file)
 
@@ -42,7 +43,7 @@ def plot_map():
                     "below":"traces",
                     "type":"line",
                     "color":"purple",
-                    "line":{"width": 10.5}
+                    "line":{"width": 1.5}
                 }
             ],
         },
@@ -99,7 +100,7 @@ def parse_contents(contents, filename, date):
     ])
 
 def clean_data(df):
-    global figure
+    global fig
 ### use dff because counties_df is global
     global counties_df # make global so it can be used in clean_data
     dff = counties_gdf.copy()
@@ -126,6 +127,7 @@ def clean_data(df):
     dff['Democrats']=0
     dff['Unaffiliated']=0
     dff['Max']=None
+    dff['Total']=0
 
 
 #    figure.update_traces(locations=dff,selector=dict(type='choropleth'))
@@ -133,15 +135,18 @@ def clean_data(df):
 
     partial = 0.75
 
-    for c in dff['COUNTY']:
-        county_index = dff[dff['COUNTY']==c].index[0]
+    for c in dff['LABEL']:
+        county_index = dff[dff['LABEL']==c].index[0]
+        print('LABEL',county_index)
         voter_index = df_clean[df_clean['County']==c].index[0]
+        print('Voter',voter_index)
         gop_total = df_clean.at[voter_index,'REP-Active']+df_clean.at[voter_index,'REP-Inactive']
         dff.at[county_index,'Republicans'] = gop_total
         dem_total = df_clean.at[voter_index,'DEM-Active']+df_clean.at[voter_index,'DEM-Inactive']
         dff.at[county_index,'Democrats'] = dem_total
         uaf_total = df_clean.at[voter_index,'UAF-Active']+df_clean.at[voter_index,'UAF-Inactive']
         dff.at[county_index,'Unaffiliated'] = uaf_total
+        dff.at[county_index,'Total']=(gop_total + dem_total + uaf_total)/1000.
 
         if ((dff.at[county_index,'Unaffiliated'] > dff.at[county_index,'Democrats']) and \
             (dff.at[county_index,'Unaffiliated'] > dff.at[county_index,'Republicans'])):
@@ -160,6 +165,38 @@ def clean_data(df):
         else:
             print('Error, no max found')
             exit()
+
+    print(dff.columns)
+
+# prepare data for plot
+    lats = dff['CENT_LAT']
+    lons = dff['CENT_LONG']
+    sizes = dff['Total']
+    for i in range(0,len(sizes)):
+        sizes[i] = min(sizes[i],150)
+        sizes[i] = max(10,sizes[i])
+        print('s=',sizes[i])
+
+    colors = []
+    color_key = ["blue","lightblue","grey","pink","red"]
+    for i in range(0,len(dff['Max'])):
+        m = int(dff['Max'][i])
+        print('i=',i,' m=',m,color_key[m])
+        colors.append(color_key[m])
+
+    labels = []
+    reps = dff['Republicans'].astype(int).astype(str)
+    uafs = dff['Unaffiliated'].astype(int).astype(str)
+    dems = dff['Democrats'].astype(int).astype(str)
+    for i in range(0,len(dff['LABEL'])):
+        labels.append(dff['LABEL'][i] + '\nRep: '+reps[i] + '\nUAF: '+uafs[i]+'\nDems: '+dems[i])
+
+    print('lat',type(lats),'lon',type(lons))
+
+    fig.add_scattermapbox(lat=lats,lon=lons,mode='markers+text',text=labels,
+                      marker_size=sizes,marker_color=colors, below='')
+
+    fig.update_traces(line=dict(width=3, color='black'))
 
     df = dff.copy()
     return df_clean
